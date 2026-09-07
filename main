@@ -21,6 +21,6 @@ fi
 
 singularity exec \
   -B `pwd`/license.txt:/opt/freesurfer/license.txt \
-  docker://brainlife/mne-freesurfer:7.3.2-1.2.1 \
+  docker://brainlifemeeg/mne-freesurfer:1.12.1-7.4.1 \
   python3 main.py
 
