@@ -1,0 +1,7 @@
+{
+    "freesurfer": "in_dir/freesurfer",
+    "subjects_dir": null,
+    "subject": null,
+    "n_layers": 3,
+    "ico": 4
+}

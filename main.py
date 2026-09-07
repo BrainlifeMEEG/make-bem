@@ -2,7 +2,7 @@
 app-bem-v2: Compute BEM (Boundary Element Model) from FreeSurfer output.
 
 Inputs : FreeSurfer subject directory (from recon-all).
-Outputs: bem-sol.fif (BEM conductor model for forward modelling).
+Outputs: meg.fif (BEM conductor model for forward modelling).
 """
 
 import os
@@ -80,10 +80,32 @@ add_info_to_product(report_items, f"Subject: {subject}", "info")
 
 # == PARAMETERS ==
 n_layers_raw = config.get('n_layers') or '3'
-n_layers = int(n_layers_raw)
+try:
+    n_layers = int(n_layers_raw)
+except (TypeError, ValueError):
+    add_info_to_product(
+        report_items,
+        f"FATAL: n_layers must be 1 or 3 (got {n_layers_raw!r}). "
+        "Use 3 for EEG or combined MEG+EEG, 1 for MEG-only.",
+        "error"
+    )
+    create_product_json(report_items)
+    sys.exit(1)
 
 ico_raw = config.get('ico')
-ico = int(ico_raw) if ico_raw not in (None, '', 'None', 'none') else None
+if ico_raw in (None, '', 'None', 'none'):
+    ico = None
+else:
+    try:
+        ico = int(ico_raw)
+    except (TypeError, ValueError):
+        add_info_to_product(
+            report_items,
+            f"FATAL: ico must be an integer (got {ico_raw!r}).",
+            "error"
+        )
+        create_product_json(report_items)
+        sys.exit(1)
 
 if n_layers == 3:
     conductivity = (0.3, 0.006, 0.3)
@@ -185,19 +207,6 @@ _brain_surfaces = "white"
 if not os.path.isfile(os.path.join(subjects_dir, subject, 'surf', 'lh.white')):
     _brain_surfaces = None
 
-def _crop_middle_slice(fig):
-    """Render fig, crop out the middle subplot, return as RGB array."""
-    axes = fig.axes
-    mid_ax = axes[len(axes) // 2]
-    fig.canvas.draw()
-    buf = fig.canvas.buffer_rgba()
-    full_img = np.asarray(buf)[..., :3]
-    bbox = mid_ax.get_position()
-    h, w = full_img.shape[:2]
-    x0, x1 = int(bbox.x0 * w), int(bbox.x1 * w)
-    y0, y1 = int((1 - bbox.y1) * h), int((1 - bbox.y0) * h)
-    return full_img[y0:y1, x0:x1]
-
 slices = {}
 for orientation in ('coronal', 'axial', 'sagittal'):
     try:
@@ -206,7 +215,17 @@ for orientation in ('coronal', 'axial', 'sagittal'):
             brain_surfaces=_brain_surfaces,
             orientation=orientation, show=False
         )
-        slices[orientation] = _crop_middle_slice(fig)
+        # Render fig, crop out the middle subplot, keep as RGB array.
+        axes = fig.axes
+        mid_ax = axes[len(axes) // 2]
+        fig.canvas.draw()
+        buf = fig.canvas.buffer_rgba()
+        full_img = np.asarray(buf)[..., :3]
+        bbox = mid_ax.get_position()
+        h, w = full_img.shape[:2]
+        x0, x1 = int(bbox.x0 * w), int(bbox.x1 * w)
+        y0, y1 = int((1 - bbox.y1) * h), int((1 - bbox.y0) * h)
+        slices[orientation] = full_img[y0:y1, x0:x1]
         plt.close(fig)
     except Exception as e:
         add_info_to_product(report_items, f"Could not plot BEM ({orientation}): {e}", "warning")

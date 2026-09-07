@@ -12,7 +12,7 @@ Brainlife app to compute a BEM (Boundary Element Model) from a FreeSurfer recon-
 
 | Key | Datatype | Description |
 |-----|----------|-------------|
-| `out_dir/bem-sol.fif` | `neuro/bem` | BEM conductor model for forward modelling |
+| `out_dir/meg.fif` | `neuro/bem` | BEM conductor model for forward modelling |
 
 ## Parameters
 
