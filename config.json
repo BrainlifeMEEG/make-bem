@@ -1,5 +1,6 @@
 {
-    "freesurfer": "in_dir/freesurfer",
+    "freesurfer": "",
+    "output": "",
     "subjects_dir": null,
     "subject": null,
     "n_layers": 3,

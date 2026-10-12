@@ -37,9 +37,11 @@ import matplotlib.pyplot as plt
 
 import mne
 
+mne.set_log_level('WARNING')
+
 # == SETUP ==
 ensure_output_dirs('out_dir', 'out_figs', 'out_dir_report')
-report_items = []
+product_items = []
 
 # == LOAD CONFIG ==
 config = load_config()
@@ -58,25 +60,25 @@ if fs_path and os.path.isdir(fs_path):
 
 if not subjects_dir or not subject:
     add_info_to_product(
-        report_items,
+        product_items,
         "FATAL: No FreeSurfer directory found. "
         "Set 'freesurfer' in config.json to the subject's FreeSurfer directory.",
         "error"
     )
-    create_product_json(report_items)
+    create_product_json(product_items)
     sys.exit(1)
 
 if not os.path.isdir(os.path.join(subjects_dir, subject)):
     add_info_to_product(
-        report_items,
+        product_items,
         f"FATAL: FreeSurfer subject directory not found: "
         f"{os.path.join(subjects_dir, subject)}",
         "error"
     )
-    create_product_json(report_items)
+    create_product_json(product_items)
     sys.exit(1)
 
-add_info_to_product(report_items, f"Subject: {subject}", "info")
+add_info_to_product(product_items, f"Subject: {subject}", "info")
 
 # == PARAMETERS ==
 n_layers_raw = config.get('n_layers') or '3'
@@ -84,12 +86,12 @@ try:
     n_layers = int(n_layers_raw)
 except (TypeError, ValueError):
     add_info_to_product(
-        report_items,
+        product_items,
         f"FATAL: n_layers must be 1 or 3 (got {n_layers_raw!r}). "
         "Use 3 for EEG or combined MEG+EEG, 1 for MEG-only.",
         "error"
     )
-    create_product_json(report_items)
+    create_product_json(product_items)
     sys.exit(1)
 
 ico_raw = config.get('ico')
@@ -100,11 +102,11 @@ else:
         ico = int(ico_raw)
     except (TypeError, ValueError):
         add_info_to_product(
-            report_items,
+            product_items,
             f"FATAL: ico must be an integer (got {ico_raw!r}).",
             "error"
         )
-        create_product_json(report_items)
+        create_product_json(product_items)
         sys.exit(1)
 
 if n_layers == 3:
@@ -113,16 +115,16 @@ elif n_layers == 1:
     conductivity = (0.3,)
 else:
     add_info_to_product(
-        report_items,
+        product_items,
         f"FATAL: n_layers must be 1 or 3 (got {n_layers}). "
         "Use 3 for EEG or combined MEG+EEG, 1 for MEG-only.",
         "error"
     )
-    create_product_json(report_items)
+    create_product_json(product_items)
     sys.exit(1)
 
 add_info_to_product(
-    report_items,
+    product_items,
     f"BEM parameters: {n_layers}-layer | ico={ico} | conductivity={conductivity} S/m",
     "info"
 )
@@ -146,24 +148,24 @@ else:
     surfaces_exist = os.path.isfile(inner_surf)
 
 if surfaces_exist:
-    add_info_to_product(report_items, "BEM surfaces found — skipping watershed step.", "info")
+    add_info_to_product(product_items, "BEM surfaces found — skipping watershed step.", "info")
 else:
-    add_info_to_product(report_items, "Running FreeSurfer watershed BEM...", "info")
+    add_info_to_product(product_items, "Running FreeSurfer watershed BEM...", "info")
     try:
         import subprocess
         subprocess.run(
             ['mne', 'watershed_bem', '-s', subject, '-d', subjects_dir, '-o', '-g'],
             check=True
         )
-        add_info_to_product(report_items, "Watershed BEM surfaces created.", "info")
+        add_info_to_product(product_items, "Watershed BEM surfaces created.", "info")
     except Exception as e:
         add_info_to_product(
-            report_items,
+            product_items,
             f"FATAL: Watershed BEM failed: {e}\n"
             "Ensure FreeSurfer is installed and recon-all has completed.",
             "error"
         )
-        create_product_json(report_items)
+        create_product_json(product_items)
         sys.exit(1)
 
 # == MAKE BEM MODEL ==
@@ -174,32 +176,32 @@ try:
     )
     n_triangles = sum(s['ntri'] for s in model)
     add_info_to_product(
-        report_items,
+        product_items,
         f"BEM model: {len(model)} surface(s), {n_triangles} triangles total",
         "info"
     )
 except Exception as e:
-    add_info_to_product(report_items, f"FATAL: make_bem_model failed: {e}", "error")
-    create_product_json(report_items)
+    add_info_to_product(product_items, f"FATAL: make_bem_model failed: {e}", "error")
+    create_product_json(product_items)
     sys.exit(1)
 
 # == MAKE BEM SOLUTION ==
 try:
     bem_sol = mne.make_bem_solution(model, verbose=True)
-    add_info_to_product(report_items, "BEM solution computed.", "info")
+    add_info_to_product(product_items, "BEM solution computed.", "info")
 except Exception as e:
-    add_info_to_product(report_items, f"FATAL: make_bem_solution failed: {e}", "error")
-    create_product_json(report_items)
+    add_info_to_product(product_items, f"FATAL: make_bem_solution failed: {e}", "error")
+    create_product_json(product_items)
     sys.exit(1)
 
 # == SAVE BEM SOLUTION ==
 bem_path = os.path.join('out_dir', 'meg.fif')  # meg/fif datatype requires meg.fif
 try:
     mne.write_bem_solution(bem_path, bem_sol, overwrite=True)
-    add_info_to_product(report_items, f"Saved: {bem_path}", "info")
+    add_info_to_product(product_items, f"Saved: {bem_path}", "info")
 except Exception as e:
-    add_info_to_product(report_items, f"FATAL: Could not save BEM solution: {e}", "error")
-    create_product_json(report_items)
+    add_info_to_product(product_items, f"FATAL: Could not save BEM solution: {e}", "error")
+    create_product_json(product_items)
     sys.exit(1)
 
 # == QC FIGURE FOR PRODUCT.JSON — middle slice from all 3 orientations, side-by-side ==
@@ -228,7 +230,7 @@ for orientation in ('coronal', 'axial', 'sagittal'):
         slices[orientation] = full_img[y0:y1, x0:x1]
         plt.close(fig)
     except Exception as e:
-        add_info_to_product(report_items, f"Could not plot BEM ({orientation}): {e}", "warning")
+        add_info_to_product(product_items, f"Could not plot BEM ({orientation}): {e}", "warning")
 
 if slices:
     n = len(slices)
@@ -242,7 +244,7 @@ if slices:
     thumb_path = os.path.join('out_figs', 'bem_thumb.png')
     combined.savefig(thumb_path, dpi=100, bbox_inches='tight')
     plt.close(combined)
-    add_image_to_product(report_items, 'BEM surfaces — middle slice', filepath=thumb_path)
+    add_image_to_product(product_items, 'BEM surfaces — middle slice', filepath=thumb_path)
 
 # == SAVE REPORT — interactive slider via report.add_bem() ==
 # add_bem generates a slider through all MRI slices with BEM contours.
@@ -255,11 +257,11 @@ try:
         decim=4, width=512
     )
 except Exception as e:
-    add_info_to_product(report_items, f"Could not add interactive BEM to report: {e}", "warning")
+    add_info_to_product(product_items, f"Could not add interactive BEM to report: {e}", "warning")
     if os.path.isfile(os.path.join('out_figs', 'bem_thumb.png')):
         report.add_image(os.path.join('out_figs', 'bem_thumb.png'), title='BEM surfaces')
 report.save(os.path.join('out_dir_report', 'report.html'), overwrite=True)
 
-add_info_to_product(report_items, "BEM computation completed successfully.", "success")
-create_product_json(report_items)
+add_info_to_product(product_items, "BEM computation completed successfully.", "success")
+create_product_json(product_items)
 print("Done.")
