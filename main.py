@@ -65,6 +65,7 @@ if not subjects_dir or not subject:
         "Set 'freesurfer' in config.json to the subject's FreeSurfer directory.",
         "error"
     )
+    print(f"ERROR: {product_items[-1]['msg']}", file=sys.stderr)
     create_product_json(product_items)
     sys.exit(1)
 
@@ -75,6 +76,7 @@ if not os.path.isdir(os.path.join(subjects_dir, subject)):
         f"{os.path.join(subjects_dir, subject)}",
         "error"
     )
+    print(f"ERROR: {product_items[-1]['msg']}", file=sys.stderr)
     create_product_json(product_items)
     sys.exit(1)
 
@@ -91,6 +93,7 @@ except (TypeError, ValueError):
         "Use 3 for EEG or combined MEG+EEG, 1 for MEG-only.",
         "error"
     )
+    print(f"ERROR: {product_items[-1]['msg']}", file=sys.stderr)
     create_product_json(product_items)
     sys.exit(1)
 
@@ -106,6 +109,7 @@ else:
             f"FATAL: ico must be an integer (got {ico_raw!r}).",
             "error"
         )
+        print(f"ERROR: {product_items[-1]['msg']}", file=sys.stderr)
         create_product_json(product_items)
         sys.exit(1)
 
@@ -120,6 +124,7 @@ else:
         "Use 3 for EEG or combined MEG+EEG, 1 for MEG-only.",
         "error"
     )
+    print(f"ERROR: {product_items[-1]['msg']}", file=sys.stderr)
     create_product_json(product_items)
     sys.exit(1)
 
@@ -165,6 +170,7 @@ else:
             "Ensure FreeSurfer is installed and recon-all has completed.",
             "error"
         )
+        print(f"ERROR: {product_items[-1]['msg']}", file=sys.stderr)
         create_product_json(product_items)
         sys.exit(1)
 
@@ -182,6 +188,7 @@ try:
     )
 except Exception as e:
     add_info_to_product(product_items, f"FATAL: make_bem_model failed: {e}", "error")
+    print(f"ERROR: {product_items[-1]['msg']}", file=sys.stderr)
     create_product_json(product_items)
     sys.exit(1)
 
@@ -191,6 +198,7 @@ try:
     add_info_to_product(product_items, "BEM solution computed.", "info")
 except Exception as e:
     add_info_to_product(product_items, f"FATAL: make_bem_solution failed: {e}", "error")
+    print(f"ERROR: {product_items[-1]['msg']}", file=sys.stderr)
     create_product_json(product_items)
     sys.exit(1)
 
@@ -201,6 +209,7 @@ try:
     add_info_to_product(product_items, f"Saved: {bem_path}", "info")
 except Exception as e:
     add_info_to_product(product_items, f"FATAL: Could not save BEM solution: {e}", "error")
+    print(f"ERROR: {product_items[-1]['msg']}", file=sys.stderr)
     create_product_json(product_items)
     sys.exit(1)
 
