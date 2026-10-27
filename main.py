@@ -40,7 +40,7 @@ import mne
 mne.set_log_level('WARNING')
 
 # == SETUP ==
-ensure_output_dirs('out_dir', 'out_figs', 'out_dir_report')
+ensure_output_dirs('out_dir', 'out_figs', 'out_report')
 product_items = []
 
 # == LOAD CONFIG ==
@@ -277,7 +277,7 @@ except Exception as e:
 # already on disk by this point, and an unguarded failure here would
 # exit with a bare traceback and no diagnostics at all.
 try:
-    report.save(os.path.join('out_dir_report', 'report.html'), overwrite=True)
+    report.save(os.path.join('out_report', 'report.html'), overwrite=True)
 except Exception as e:
     add_info_to_product(product_items, f"Could not save HTML report: {e}", "warning")
 

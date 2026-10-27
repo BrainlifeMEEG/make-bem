@@ -27,7 +27,7 @@ The app generates:
 
 - **`out_dir/meg.fif`** (`neuro/meg/fif`, tag `bem`): BEM conductor model solution for forward modelling
 - **`out_figs/bem_thumb.png`** (`generic/image/png`): QC thumbnail of the BEM surfaces (coronal/axial/sagittal middle slices)
-- **`out_dir_report/report.html`** (`report/html`): interactive HTML report with BEM contours across MRI slices
+- **`out_report/report.html`** (`report/html`): interactive HTML report with BEM contours across MRI slices
 
 ## Configuration Parameters
 
