@@ -178,7 +178,7 @@ else:
 try:
     model = mne.make_bem_model(
         subject, ico=ico, conductivity=conductivity,
-        subjects_dir=subjects_dir, verbose=True
+        subjects_dir=subjects_dir
     )
     n_triangles = sum(s['ntri'] for s in model)
     add_info_to_product(
@@ -194,7 +194,7 @@ except Exception as e:
 
 # == MAKE BEM SOLUTION ==
 try:
-    bem_sol = mne.make_bem_solution(model, verbose=True)
+    bem_sol = mne.make_bem_solution(model)
     add_info_to_product(product_items, "BEM solution computed.", "info")
 except Exception as e:
     add_info_to_product(product_items, f"FATAL: make_bem_solution failed: {e}", "error")
@@ -206,6 +206,10 @@ except Exception as e:
 bem_path = os.path.join('out_dir', 'meg.fif')  # meg/fif datatype requires meg.fif
 try:
     mne.write_bem_solution(bem_path, bem_sol, overwrite=True)
+    # Spec requires the written file to load with its MNE reader before
+    # success is reported, so a truncated or corrupt write fails here
+    # rather than three apps downstream.
+    mne.read_bem_solution(bem_path)
     add_info_to_product(product_items, f"Saved: {bem_path}", "info")
 except Exception as e:
     add_info_to_product(product_items, f"FATAL: Could not save BEM solution: {e}", "error")
@@ -269,7 +273,13 @@ except Exception as e:
     add_info_to_product(product_items, f"Could not add interactive BEM to report: {e}", "warning")
     if os.path.isfile(os.path.join('out_figs', 'bem_thumb.png')):
         report.add_image(os.path.join('out_figs', 'bem_thumb.png'), title='BEM surfaces')
-report.save(os.path.join('out_dir_report', 'report.html'), overwrite=True)
+# A failed report must not cost us product.json: the real output is
+# already on disk by this point, and an unguarded failure here would
+# exit with a bare traceback and no diagnostics at all.
+try:
+    report.save(os.path.join('out_dir_report', 'report.html'), overwrite=True)
+except Exception as e:
+    add_info_to_product(product_items, f"Could not save HTML report: {e}", "warning")
 
 add_info_to_product(product_items, "BEM computation completed successfully.", "success")
 create_product_json(product_items)
