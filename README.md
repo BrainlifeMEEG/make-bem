@@ -1,5 +1,45 @@
 # Make BEM Model
 
+<!-- brainlife-app:begin (generated from the App manifest; edit the manifest, not this block) -->
+
+> **Builds a BEM conductor model for MEG/EEG forward modelling from a FreeSurfer subject with MNE-Python, running the watershed algorithm if BEM surfaces are missing, with QC figures and a report.**
+
+If inner skull, outer skull and outer skin surfaces are not in the subject's bem/ folder, runs mne watershed_bem; then calls mne.make_bem_model with 1 or 3 layers and the chosen ico subdivision and mne.make_bem_solution, saving the solution with a QC thumbnail and an interactive HTML report. Use 3 layers for EEG or combined MEG+EEG and 1 layer for MEG only. Needs a FreeSurfer license.
+
+| | |
+|---|---|
+| 📥 **Inputs** | `neuro/freesurfer` |
+| 📤 **Outputs** | `neuro/meg/fif` · `report/html` |
+| 🐳 **Container** | `brainlifemeeg/mne-freesurfer:1.12.1-7.4.1` |
+| ⚙️ **Resources** | 1 CPUs · 16 GB memory · 2 h walltime |
+| 🔑 **Requires** | `FREESURFER_LICENSE`, `FS_LICENSE` |
+| 🔗 **Run it** | [doi.org/10.25663/brainlife.app.899](https://doi.org/10.25663/brainlife.app.899) |
+
+#### 📥 Inputs
+
+| Input | Datatype | Required | Description |
+|---|---|---|---|
+| `freesurfer` | `neuro/freesurfer` | yes | FreeSurfer recon-all subject directory. |
+
+#### 📤 Outputs
+
+| Output | Datatype | Description |
+|---|---|---|
+| `out_dir` | `neuro/meg/fif` | BEM conductor model solution (meg.fif) for forward modelling. |
+| `out_report` | `report/html` | Interactive HTML report with BEM contours over MRI slices. |
+
+<details>
+<summary><b>⚙️ Parameters</b> (2)</summary>
+
+| Parameter | Type | Default | Description |
+|---|---|---|---|
+| `n_layers` | enum | `3` | n_layers=3 → (0.3, 0.006, 0.3) S/m — brain/skull/skin (for EEG) n_layers=1 → (0.3,) S/m — inner skull only (for MEG-only) Options: `3`, `1`. |
+| `ico` | string | `4` | ICO subdivision |
+
+</details>
+
+<!-- brainlife-app:end -->
+
 [![Run on Brainlife.io](https://img.shields.io/badge/Brainlife-bl.app.899-blue.svg)](https://doi.org/10.25663/brainlife.app.899)
 
 ## Description
